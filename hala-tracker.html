@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>حالا – متابعة الملفات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f7fa;
+  --white: #ffffff;
+  --border: #e2e8f0;
+  --text: #1a202c;
+  --muted: #718096;
+  --con: #0077b6;
+  --con-light: #e8f4fd;
+  --mic: #6d28d9;
+  --mic-light: #ede9fe;
+  --green: #16a34a;
+  --green-light: #dcfce7;
+  --orange: #ea580c;
+  --red: #dc2626;
+  --yellow: #ca8a04;
+  --s0: #94a3b8; --s1: #3b82f6; --s2: #f59e0b;
+  --s3: #f97316; --s4: #22c55e;
+  --shadow: 0 1px 3px rgba(0,0,0,.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.1);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Cairo',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+nav {
+  background:var(--white); border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:50; box-shadow:var(--shadow);
+}
+.nav-inner {
+  max-width:960px; margin:0 auto;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.8rem 1.2rem;
+}
+.brand { display:flex; align-items:center; gap:.6rem; }
+.brand-icon {
+  width:36px; height:36px; border-radius:9px;
+  background:linear-gradient(135deg,var(--con),var(--mic));
+  color:#fff; font-weight:900; font-size:1.1rem;
+  display:flex; align-items:center; justify-content:center;
+}
+.brand-name { font-weight:900; font-size:1rem; }
+.brand-sub  { font-size:.68rem; color:var(--muted); }
+.nav-tabs { display:flex; gap:.3rem; }
+.nav-tab {
+  padding:.45rem 1rem; border-radius:8px; cursor:pointer;
+  font-weight:700; font-size:.85rem; border:none; background:none;
+  color:var(--muted); transition:all .2s; font-family:'Cairo',sans-serif;
+}
+.nav-tab:hover { background:var(--bg); }
+.nav-tab.active { background:var(--text); color:#fff; }
+
+.page { display:none; }
+.page.active { display:block; }
+.container { max-width:960px; margin:0 auto; padding:1.5rem 1.2rem; }
+.sec-title {
+  font-size:1rem; font-weight:700; margin-bottom:1rem;
+  display:flex; align-items:center; gap:.5rem;
+}
+.sec-title span { font-size:.8rem; color:var(--muted); font-weight:400; }
+
+/* ENTRY */
+.dept-switcher { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; margin-bottom:1.5rem; }
+.dept-btn {
+  padding:1rem; border-radius:12px; border:2px solid var(--border);
+  background:var(--white); cursor:pointer; text-align:center;
+  font-family:'Cairo',sans-serif; font-weight:700; font-size:.95rem;
+  transition:all .2s; line-height:1.6;
+}
+.dept-btn.active-con { border-color:var(--con); background:var(--con-light); color:var(--con); }
+.dept-btn.active-mic { border-color:var(--mic); background:var(--mic-light); color:var(--mic); }
+.form-card {
+  background:var(--white); border-radius:14px; border:1px solid var(--border);
+  padding:1.4rem; box-shadow:var(--shadow);
+}
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; margin-bottom:.9rem; }
+.form-group { display:flex; flex-direction:column; gap:.35rem; }
+.form-label { font-size:.78rem; font-weight:700; color:var(--muted); }
+.form-input, .form-select {
+  padding:.6rem .9rem; border:1.5px solid var(--border); border-radius:9px;
+  font-family:'Cairo',sans-serif; font-size:.9rem; color:var(--text);
+  background:var(--white); outline:none; transition:border .2s; width:100%;
+}
+.form-input:focus, .form-select:focus { border-color:var(--con); }
+.stage-selector { display:flex; gap:.5rem; flex-wrap:wrap; }
+.stage-opt {
+  flex:1; min-width:70px; padding:.5rem .4rem; border-radius:8px;
+  border:2px solid var(--border); background:var(--white);
+  cursor:pointer; text-align:center; font-size:.72rem; font-weight:700;
+  transition:all .2s; font-family:'Cairo',sans-serif; line-height:1.4;
+  color:var(--muted);
+}
+.stage-opt[data-s="0"].sel { color:var(--s0); background:#f1f5f9; border-color:var(--s0); }
+.stage-opt[data-s="1"].sel { color:var(--s1); background:#eff6ff; border-color:var(--s1); }
+.stage-opt[data-s="2"].sel { color:var(--s2); background:#fffbeb; border-color:var(--s2); }
+.stage-opt[data-s="3"].sel { color:var(--s3); background:#fff7ed; border-color:var(--s3); }
+.stage-opt[data-s="4"].sel { color:var(--s4); background:#f0fdf4; border-color:var(--s4); }
+.btn-save {
+  width:100%; padding:.85rem; border-radius:10px; border:none;
+  color:#fff; font-family:'Cairo',sans-serif;
+  font-weight:700; font-size:.95rem; cursor:pointer; margin-top:1rem;
+  transition:all .2s;
+}
+.btn-save.con { background:var(--con); }
+.btn-save.mic { background:var(--mic); }
+.btn-save:hover { opacity:.9; transform:translateY(-1px); }
+
+/* TOAST */
+.toast {
+  position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%) translateY(80px);
+  background:var(--text); color:#fff; border-radius:10px;
+  padding:.65rem 1.2rem; font-size:.85rem; font-weight:600;
+  z-index:999; transition:transform .3s; white-space:nowrap;
+  box-shadow:var(--shadow-md);
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+/* REPORTS */
+.dept-tabs {
+  display:flex; gap:.5rem; background:var(--white); border-radius:10px;
+  padding:.4rem; border:1px solid var(--border); width:fit-content;
+}
+.dept-tab {
+  padding:.45rem 1.2rem; border-radius:7px; cursor:pointer;
+  font-weight:700; font-size:.85rem; border:none; background:none;
+  color:var(--muted); transition:all .2s; font-family:'Cairo',sans-serif;
+}
+.dept-tab.active-con { background:var(--con); color:#fff; }
+.dept-tab.active-mic { background:var(--mic); color:#fff; }
+.summary-strip {
+  display:grid; grid-template-columns:repeat(6,1fr); gap:.6rem; margin-bottom:1.2rem;
+}
+.sum-card {
+  background:var(--white); border:2px solid var(--border); border-radius:12px;
+  padding:.7rem .5rem; text-align:center; cursor:pointer; transition:all .2s;
+}
+.sum-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+.sum-icon  { font-size:1.1rem; margin-bottom:.15rem; }
+.sum-num   { font-size:1.4rem; font-weight:900; line-height:1; }
+.sum-label { font-size:.64rem; color:var(--muted); font-weight:600; margin-top:.2rem; }
+.spec-section { margin-bottom:.8rem; }
+.spec-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.65rem .9rem; border-radius:10px;
+  background:var(--white); border:1px solid var(--border);
+  cursor:pointer; user-select:none; transition:border-radius .2s;
+}
+.spec-header.open { border-radius:10px 10px 0 0; }
+.spec-name { font-weight:700; font-size:.9rem; display:flex; align-items:center; gap:.5rem; }
+.spec-badges { display:flex; gap:.4rem; align-items:center; }
+.spec-count {
+  background:var(--bg); border:1px solid var(--border); border-radius:6px;
+  padding:.15rem .5rem; font-size:.73rem; font-weight:700; color:var(--muted);
+}
+.chevron { font-size:.7rem; transition:transform .25s; color:var(--muted); }
+.chevron.open { transform:rotate(180deg); }
+.spec-table-wrap {
+  border:1px solid var(--border); border-top:none;
+  border-radius:0 0 10px 10px; overflow:hidden; display:none;
+}
+.spec-table-wrap.open { display:block; }
+table { width:100%; border-collapse:collapse; }
+th {
+  background:#f8fafc; padding:.55rem .9rem; text-align:right;
+  font-size:.74rem; font-weight:700; color:var(--muted);
+  border-bottom:1px solid var(--border);
+}
+td {
+  padding:.6rem .9rem; font-size:.82rem;
+  border-bottom:1px solid var(--border); vertical-align:middle;
+}
+tr:last-child td { border-bottom:none; }
+tr.data-row:hover td { background:#fafbfc; cursor:pointer; }
+tfoot tr td { font-weight:700; background:#f8fafc; font-size:.8rem; }
+.sb {
+  display:inline-flex; align-items:center; gap:.3rem;
+  border-radius:20px; padding:.18rem .6rem;
+  font-size:.72rem; font-weight:700; white-space:nowrap;
+}
+.sb-0 { background:#f1f5f9; color:#64748b; }
+.sb-1 { background:#eff6ff; color:#2563eb; }
+.sb-2 { background:#fffbeb; color:#d97706; }
+.sb-3 { background:#fff7ed; color:#ea580c; }
+.sb-4 { background:#f0fdf4; color:#16a34a; }
+.btn-next {
+  padding:.22rem .55rem; border-radius:6px; border:none;
+  background:var(--green-light); color:var(--green);
+  font-family:'Cairo',sans-serif; font-size:.7rem; font-weight:700;
+  cursor:pointer; transition:all .2s; white-space:nowrap;
+}
+.btn-next:hover { background:var(--green); color:#fff; }
+.btn-del {
+  padding:.22rem .45rem; border-radius:6px; border:none;
+  background:#fff0f0; color:var(--red);
+  font-family:'Cairo',sans-serif; font-size:.7rem; cursor:pointer;
+  transition:all .2s;
+}
+.btn-del:hover { background:var(--red); color:#fff; }
+.done-badge { color:var(--green); font-size:.78rem; font-weight:700; }
+.days-ok   { color:var(--green); font-weight:600; font-size:.8rem; }
+.days-warn { color:var(--yellow); font-weight:600; font-size:.8rem; }
+.days-late { color:var(--red); font-weight:700; font-size:.8rem; }
+.empty { text-align:center; padding:2.5rem; color:var(--muted); font-size:.88rem; }
+
+/* EDIT MODAL */
+.modal-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.5); backdrop-filter:blur(3px);
+  z-index:100; align-items:center; justify-content:center;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--white); border-radius:14px; border:1px solid var(--border);
+  width:95%; max-width:480px; box-shadow:var(--shadow-md);
+  animation:mIn .2s ease;
+}
+@keyframes mIn { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:none} }
+.modal-head {
+  padding:1rem 1.2rem; border-bottom:1px solid var(--border);
+  display:flex; justify-content:space-between; align-items:center;
+  font-weight:700; font-size:.95rem;
+}
+.modal-body { padding:1.2rem; display:grid; grid-template-columns:1fr 1fr; gap:.8rem; }
+.modal-foot {
+  padding:.9rem 1.2rem; border-top:1px solid var(--border);
+  display:flex; gap:.6rem; justify-content:flex-end;
+}
+.btn-ghost {
+  padding:.5rem 1rem; border-radius:8px; border:1px solid var(--border);
+  background:var(--bg); font-family:'Cairo',sans-serif; font-size:.85rem;
+  font-weight:600; cursor:pointer; color:var(--muted);
+}
+.btn-ok {
+  padding:.5rem 1.2rem; border-radius:8px; border:none;
+  background:var(--text); color:#fff; font-family:'Cairo',sans-serif;
+  font-size:.85rem; font-weight:700; cursor:pointer;
+}
+
+@media(max-width:640px){
+  .form-row{grid-template-columns:1fr}
+  .summary-strip{grid-template-columns:repeat(3,1fr)}
+  th:nth-child(5),td:nth-child(5){display:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="brand-icon">ح</div>
+      <div>
+        <div class="brand-name">حالا – متابعة الملفات</div>
+        <div class="brand-sub">نظام دورة العمل</div>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="goPage('entry')">➕ إدخال ملف</button>
+      <button class="nav-tab" onclick="goPage('reports')">📊 التقارير</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ====== ENTRY ====== -->
+<div class="page active" id="page-entry">
+  <div class="container">
+    <div class="sec-title">اختر القسم <span>ثم سجّل بيانات الملف</span></div>
+    <div class="dept-switcher">
+      <button class="dept-btn active-con" id="btn-con" onclick="setDept('consumer')">
+        🏦 الاستهلاكي<br>
+        <span style="font-size:.72rem;font-weight:400;opacity:.8">عطيات · عزة · صفاء · مروة · آية · عواطف · عبدالله</span>
+      </button>
+      <button class="dept-btn" id="btn-mic" onclick="setDept('micro')">
+        🌱 المايكرو<br>
+        <span style="font-size:.72rem;font-weight:400;opacity:.8">شيماء · سماح · ندى</span>
+      </button>
+    </div>
+    <div class="form-card">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">👤 اسم العميل *</label>
+          <input class="form-input" id="f-name" placeholder="الاسم الثلاثي">
+        </div>
+        <div class="form-group">
+          <label class="form-label">👩‍💼 الأخصائي *</label>
+          <select class="form-select" id="f-spec"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">📅 تاريخ التقديم</label>
+          <input class="form-input" id="f-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">💰 المبلغ المطلوب (ج.م)</label>
+          <input class="form-input" id="f-amount" type="number" placeholder="0">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:.9rem">
+        <label class="form-label" style="margin-bottom:.4rem">📋 مرحلة دورة العمل</label>
+        <div class="stage-selector" id="stageSel">
+          <button class="stage-opt sel" data-s="0">📋<br>تقديم</button>
+          <button class="stage-opt" data-s="1">🔍<br>استعلام<br>& زيارة</button>
+          <button class="stage-opt" data-s="2">📊<br>دراسة</button>
+          <button class="stage-opt" data-s="3">⚖️<br>قرار<br>لجنة</button>
+          <button class="stage-opt" data-s="4">✍️<br>توقيع</button>
+        </div>
+      </div>
+      <button class="btn-save con" id="saveBtn" onclick="saveFile()">✅ حفظ الملف</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== REPORTS ====== -->
+<div class="page" id="page-reports">
+  <div class="container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;flex-wrap:wrap;gap:.8rem">
+      <div class="dept-tabs">
+        <button class="dept-tab active-con" id="rtab-con" onclick="setRDept('consumer')">🏦 الاستهلاكي</button>
+        <button class="dept-tab" id="rtab-mic" onclick="setRDept('micro')">🌱 المايكرو</button>
+      </div>
+      <input style="border:1.5px solid var(--border);border-radius:8px;padding:.45rem .8rem;font-family:Cairo,sans-serif;font-size:.83rem;outline:none;width:200px;transition:border .2s"
+        placeholder="🔍 بحث باسم العميل..." id="searchBox" oninput="renderReports()"
+        onfocus="this.style.borderColor='var(--con)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
+    <div class="summary-strip" id="summaryStrip"></div>
+    <div id="specSections"></div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-head">
+      ✏️ تعديل الملف
+      <button style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted)" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">اسم العميل</label>
+        <input class="form-input" id="e-name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الأخصائي</label>
+        <select class="form-select" id="e-spec"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">تاريخ التقديم</label>
+        <input class="form-input" id="e-date" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">المبلغ (ج.م)</label>
+        <input class="form-input" id="e-amount" type="number">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">مرحلة دورة العمل</label>
+        <select class="form-select" id="e-stage">
+          <option value="0">📋 تقديم</option>
+          <option value="1">🔍 استعلام & زيارة</option>
+          <option value="2">📊 دراسة</option>
+          <option value="3">⚖️ قرار لجنة</option>
+          <option value="4">✍️ توقيع</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeEdit()">إلغاء</button>
+      <button class="btn-ok" onclick="saveEdit()">💾 حفظ التعديل</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SPECS = {
+  consumer: ['عطيات','عزة','صفاء','مروة','آية','عواطف','عبدالله'],
+  micro:    ['شيماء','سماح','ندى']
+};
+const STAGES = ['تقديم','استعلام & زيارة','دراسة','قرار لجنة','توقيع'];
+const ICONS  = ['📋','🔍','📊','⚖️','✍️'];
+const SC = ['var(--s0)','var(--s1)','var(--s2)','var(--s3)','var(--s4)'];
+
+let files = JSON.parse(localStorage.getItem('hala_v2')||'[]');
+let entryDept  = 'consumer';
+let reportDept = 'consumer';
+let stageFilter = -1;
+let curStage = 0;
+let editId = null;
+
+function save() { localStorage.setItem('hala_v2', JSON.stringify(files)); }
+
+// ── PAGES ──
+function goPage(p) {
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>{
+    t.classList.toggle('active',(p==='entry'&&i===0)||(p==='reports'&&i===1));
+  });
+  if(p==='reports') renderReports();
+}
+
+// ── ENTRY ──
+function setDept(d) {
+  entryDept=d;
+  document.getElementById('btn-con').className='dept-btn'+(d==='consumer'?' active-con':'');
+  document.getElementById('btn-mic').className='dept-btn'+(d==='micro'?' active-mic':'');
+  document.getElementById('saveBtn').className='btn-save '+(d==='consumer'?'con':'mic');
+  fillSpecs('f-spec', d);
+}
+function fillSpecs(selId, dept) {
+  const sel=document.getElementById(selId);
+  sel.innerHTML=SPECS[dept].map(s=>`<option>${s}</option>`).join('');
+}
+
+document.getElementById('stageSel').addEventListener('click',e=>{
+  const btn=e.target.closest('.stage-opt'); if(!btn) return;
+  curStage=+btn.dataset.s;
+  document.querySelectorAll('.stage-opt').forEach(b=>b.classList.toggle('sel',b===btn));
+});
+
+function saveFile() {
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){toast('⚠️ اكتب اسم العميل');return;}
+  files.push({
+    id:'t'+Date.now(), dept:entryDept,
+    name, spec:document.getElementById('f-spec').value,
+    date:document.getElementById('f-date').value||new Date().toISOString().split('T')[0],
+    amount:+document.getElementById('f-amount').value||0,
+    stage:curStage
+  });
+  save();
+  document.getElementById('f-name').value='';
+  document.getElementById('f-amount').value='';
+  document.querySelectorAll('.stage-opt').forEach(b=>b.classList.toggle('sel',b.dataset.s==='0'));
+  curStage=0;
+  toast('✅ تم حفظ الملف');
+}
+
+// ── REPORTS ──
+function setRDept(d) {
+  reportDept=d; stageFilter=-1;
+  document.getElementById('rtab-con').className='dept-tab'+(d==='consumer'?' active-con':'');
+  document.getElementById('rtab-mic').className='dept-tab'+(d==='micro'?' active-mic':'');
+  renderReports();
+}
+
+function renderReports() {
+  const search=document.getElementById('searchBox').value.trim().toLowerCase();
+  const all=files.filter(f=>f.dept===reportDept);
+  let data=[...all];
+  if(search) data=data.filter(f=>f.name.toLowerCase().includes(search));
+  if(stageFilter>=0) data=data.filter(f=>f.stage===stageFilter);
+  renderSummary(all,search);
+  renderSpecs(data);
+}
+
+function renderSummary(all, search) {
+  const vis=search?all.filter(f=>f.name.toLowerCase().includes(search)):all;
+  const counts=[0,0,0,0,0];
+  vis.forEach(f=>counts[f.stage]++);
+  const cards=[
+    {label:'الكل',num:vis.length,icon:'📁',color:'var(--text)',stg:-1},
+    ...STAGES.map((s,i)=>({label:s,num:counts[i],icon:ICONS[i],color:SC[i],stg:i}))
+  ];
+  document.getElementById('summaryStrip').innerHTML=cards.map(c=>`
+    <div class="sum-card" style="${stageFilter===c.stg?'border-color:'+c.color:''}" onclick="setSF(${c.stg})">
+      <div class="sum-icon">${c.icon}</div>
+      <div class="sum-num" style="color:${c.color}">${c.num}</div>
+      <div class="sum-label">${c.label}</div>
+    </div>`).join('');
+}
+
+function setSF(s){stageFilter=s;renderReports();}
+
+function renderSpecs(data) {
+  const specs=SPECS[reportDept];
+  let html='';
+  specs.forEach(spec=>{
+    const rows=data.filter(f=>f.spec===spec);
+    if(!rows.length) return;
+    const total=rows.reduce((a,f)=>a+(f.amount||0),0);
+    html+=`
+      <div class="spec-section">
+        <div class="spec-header" onclick="toggleSpec(this)">
+          <div class="spec-name">
+            <span style="width:28px;height:28px;border-radius:50%;
+              background:${reportDept==='consumer'?'var(--con-light)':'var(--mic-light)'};
+              color:${reportDept==='consumer'?'var(--con)':'var(--mic)'};
+              display:inline-flex;align-items:center;justify-content:center;
+              font-size:.8rem;font-weight:700">${spec[0]}</span>
+            ${spec}
+          </div>
+          <div class="spec-badges">
+            <span class="spec-count">${rows.length} ملف</span>
+            ${total>0?`<span class="spec-count" style="color:var(--green)">${total.toLocaleString('ar-EG')} ج.م</span>`:''}
+            <span class="chevron">▼</span>
+          </div>
+        </div>
+        <div class="spec-table-wrap">
+          <table>
+            <thead><tr>
+              <th>اسم العميل</th>
+              <th>تاريخ التقديم</th>
+              <th>المبلغ</th>
+              <th>مرحلة دورة العمل</th>
+              <th>الأيام</th>
+              <th style="width:130px"></th>
+            </tr></thead>
+            <tbody>${rows.map(f=>buildRow(f)).join('')}</tbody>
+            ${rows.length>1&&total>0?`
+            <tfoot><tr>
+              <td colspan="2">الإجمالي</td>
+              <td>${total.toLocaleString('ar-EG')} ج.م</td>
+              <td colspan="3"></td>
+            </tr></tfoot>`:''}
+          </table>
+        </div>
+      </div>`;
+  });
+  document.getElementById('specSections').innerHTML=html||
+    `<div class="empty">📭 لا توجد ملفات في هذا القسم</div>`;
+}
+
+function buildRow(f) {
+  const d=daysSince(f.date);
+  const dc=d>14?'days-late':d>7?'days-warn':'days-ok';
+  const nextLabel=f.stage<4?`← ${STAGES[f.stage+1]}`:'';
+  return `<tr class="data-row" onclick="openEdit('${f.id}')">
+    <td><strong>${f.name}</strong></td>
+    <td style="color:var(--muted)">${fmt(f.date)}</td>
+    <td>${f.amount?f.amount.toLocaleString('ar-EG')+' ج.م':'—'}</td>
+    <td><span class="sb sb-${f.stage}">${ICONS[f.stage]} ${STAGES[f.stage]}</span></td>
+    <td><span class="${dc}">${d} يوم</span></td>
+    <td onclick="event.stopPropagation()" style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap">
+      ${f.stage<4?`<button class="btn-next" onclick="advance('${f.id}')">${nextLabel}</button>`:`<span class="done-badge">✅ مكتمل</span>`}
+      <button class="btn-del" onclick="delFile('${f.id}')">✕</button>
+    </td>
+  </tr>`;
+}
+
+function toggleSpec(h) {
+  const w=h.nextElementSibling, ch=h.querySelector('.chevron');
+  const open=w.classList.toggle('open');
+  ch.classList.toggle('open',open);
+  h.classList.toggle('open',open);
+}
+
+function advance(id) {
+  const f=files.find(x=>x.id===id);
+  if(f&&f.stage<4){f.stage++;save();renderReports();toast(`✅ انتقل إلى: ${STAGES[f.stage]}`);}
+}
+
+function delFile(id) {
+  if(!confirm('تأكيد حذف الملف؟')) return;
+  files=files.filter(x=>x.id!==id);save();renderReports();toast('🗑 تم الحذف');
+}
+
+// ── EDIT MODAL ──
+function openEdit(id) {
+  const f=files.find(x=>x.id===id); if(!f) return;
+  editId=id;
+  document.getElementById('e-name').value=f.name;
+  document.getElementById('e-date').value=f.date||'';
+  document.getElementById('e-amount').value=f.amount||'';
+  document.getElementById('e-stage').value=f.stage;
+  fillSpecs('e-spec', f.dept);
+  document.getElementById('e-spec').value=f.spec;
+  document.getElementById('editModal').classList.add('open');
+}
+function closeEdit(){document.getElementById('editModal').classList.remove('open');editId=null;}
+function saveEdit() {
+  const f=files.find(x=>x.id===editId); if(!f) return;
+  f.name=document.getElementById('e-name').value.trim()||f.name;
+  f.spec=document.getElementById('e-spec').value;
+  f.date=document.getElementById('e-date').value;
+  f.amount=+document.getElementById('e-amount').value||0;
+  f.stage=+document.getElementById('e-stage').value;
+  save();closeEdit();renderReports();toast('✏️ تم التعديل');
+}
+document.getElementById('editModal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('editModal')) closeEdit();
+});
+
+// ── UTILS ──
+function daysSince(d){
+  if(!d) return 0;
+  return Math.floor((Date.now()-new Date(d))/86400000);
+}
+function fmt(d){
+  if(!d) return '—';
+  return new Date(d).toLocaleDateString('ar-EG',{day:'2-digit',month:'short',year:'numeric'});
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// INIT
+document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+fillSpecs('f-spec','consumer');
+</script>
+</body>
+</html>
